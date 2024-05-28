@@ -1,9 +1,12 @@
 import pandas as pd
 from fastapi import APIRouter
 from starlette.responses import JSONResponse
+from app.views.utils.influencers_utils import Influencer_details
 
 
 class Influencer:
+    influence_obj = Influencer_details()
+
     @property
     def router(self):
         api_router = APIRouter(prefix='/influencer')
@@ -13,22 +16,22 @@ class Influencer:
                                 country: str = None):
             df = pd.read_csv('top_insta_influencers_data.csv')
             filtered_df = df.copy()
+
             if min_influence_score is not None:
                 filtered_df = filtered_df[filtered_df['influence_score'] >= min_influence_score]
             if min_followers is not None:
-                if min_followers >= 1000000:
-                    get_min_followers = "{:,.1f}m".format(min_followers / 1000000)
-                    filtered_df = filtered_df[filtered_df['followers'] >= get_min_followers]
-                else:
-                    get_min_followers = "{:,.1f}m".format((min_followers / 1000000)*100)
+                filtered_df["followers_numeric"] = filtered_df["followers"]
+                for index, follow_str in enumerate(filtered_df['followers_numeric']):
+                    followers_numeric = self.influence_obj.to_numeric(follow_str)
+                    filtered_df["followers_numeric"][index] = followers_numeric
+                filtered_df = filtered_df[filtered_df['followers_numeric'] >= min_followers]
 
-                    filtered_df = filtered_df[filtered_df['followers'] >= get_min_followers]
             if min_avg_likes is not None:
-                if min_avg_likes >= 1000000:
-                    get_min_avg_likes = "{:,.1f}m".format(min_avg_likes / 1000000)
-                else:
-                    get_min_avg_likes = "{:,.0f}k".format(min_avg_likes / 1000)
-                filtered_df = filtered_df[filtered_df['avg_likes'] >= get_min_avg_likes]
+                filtered_df["average_numeric"] = filtered_df["avg_likes"]
+                for index, avg_str in enumerate(filtered_df['average_numeric']):
+                    avg_numeric = self.influence_obj.to_numeric(avg_str)
+                    filtered_df["average_numeric"][index] = avg_numeric
+                filtered_df = filtered_df[filtered_df['average_numeric'] >= min_avg_likes]
             if country is not None:
                 filtered_df = filtered_df[filtered_df['country'] == country]
             filtered_df = filtered_df.map(
