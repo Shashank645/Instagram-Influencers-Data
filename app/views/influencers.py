@@ -6,7 +6,7 @@ from app.views.utils.influencers_utils import InfluencerDetails
 
 
 class Influencer:
-    influence_obj = Influencer_details()
+    influence_obj = InfluencerDetails()
 
     @property
     def router(self):
